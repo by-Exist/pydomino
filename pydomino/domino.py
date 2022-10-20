@@ -1,21 +1,20 @@
 import asyncio
 from contextvars import ContextVar, Token
-from types import TracebackType
+from types import MappingProxyType, TracebackType
 from typing import Any, ContextManager, Iterable, Literal, ParamSpec, TypeVar, overload
 
 from typing_extensions import Self
 
 from .action import Action, ActionFunction
-from .block import IBlock
+from .block import Block
 
-
-_touched_blocks_context_var: ContextVar[set[IBlock]] = ContextVar("touched_blocks")
+_touched_blocks_context_var: ContextVar[set[Block]] = ContextVar("touched_blocks")
 
 
 class TouchContext(ContextManager["TouchContext"]):
 
-    _token: Token[set[IBlock]]
-    touched_blocks: set[IBlock]
+    _token: Token[set[Block]]
+    touched_blocks: set[Block]
 
     def __enter__(self) -> Self:
         self._token = _touched_blocks_context_var.set(set())
@@ -31,19 +30,19 @@ class TouchContext(ContextManager["TouchContext"]):
         _touched_blocks_context_var.reset(self._token)
 
 
-def touch(*blocks: IBlock):
+def touch(*blocks: Block):
     _touched_blocks_context_var.get().update(blocks)
 
 
-B = TypeVar("B", bound=IBlock)
+B = TypeVar("B", bound=Block)
 P = ParamSpec("P")
 
 
 class Domino:
     def __init__(self):
         self._actions: dict[
-            type[IBlock],
-            Action[IBlock, ..., Any],
+            type[Block],
+            Action[Block, ..., Any],
         ] = {}
 
     def place(
@@ -58,7 +57,7 @@ class Domino:
     @overload
     async def start(
         self,
-        block: IBlock,
+        block: Block,
         return_effect: Literal[False] = False,
         _direct: bool = True | False,
     ) -> Any:
@@ -67,7 +66,7 @@ class Domino:
     @overload
     async def start(
         self,
-        block: IBlock,
+        block: Block,
         return_effect: Literal[True] = True,
         _direct: bool = True | False,
     ) -> tuple[Any, asyncio.Future[list[Any]]]:
@@ -75,7 +74,7 @@ class Domino:
 
     async def start(
         self,
-        block: IBlock,
+        block: Block,
         return_effect: bool = False,
         _direct: bool = True,
     ):
@@ -96,12 +95,12 @@ class Domino:
 
     async def _fall_down(
         self,
-        block: IBlock,
-        action: Action[IBlock, ..., Any],
+        block: Block,
+        action: Action[Block, ..., Any],
         raise_exception: bool = False,
     ):
         result: Any = None
-        touched_blocks: list[IBlock] = []
+        touched_blocks: list[Block] = []
         try:
             await self.pre_fall_down(block, action)
             with TouchContext() as catcher:
@@ -116,22 +115,22 @@ class Domino:
 
     async def pre_fall_down(
         self,
-        block: IBlock,
+        block: Block,
         action: Action[Any, ..., Any],
     ):
         ...
 
     async def post_fall_down(
         self,
-        block: IBlock,
+        block: Block,
         action: Action[Any, ..., Any],
-        result: IBlock | Iterable[IBlock] | None,
+        result: Block | Iterable[Block] | None,
     ):
         ...
 
     async def exception_fall_down(
         self,
-        block: IBlock,
+        block: Block,
         action: Action[Any, ..., Any],
         exc: Exception,
     ):
