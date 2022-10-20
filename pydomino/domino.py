@@ -1,6 +1,6 @@
 import asyncio
 from contextvars import ContextVar, Token
-from types import MappingProxyType, TracebackType
+from types import TracebackType
 from typing import Any, ContextManager, Iterable, Literal, ParamSpec, TypeVar, overload
 
 from typing_extensions import Self
