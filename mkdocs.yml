@@ -1,3 +1,47 @@
-site_name: My Docs
+site_name: PyDomino
+site_description: PyDomino는 도미노처럼 로직을 블럭 단위로 나누어 연속적인 동작을 조합하는 것으로 시스템을 구성합니다.
+site_url: https://by-exist.github.io/pydomino/
 theme:
   name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/lightbulb
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to dark mode
+  features:
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+  language: kr
+repo_name: by-exist/pydomino
+repo_url: https://github.com/by-Exist/pydomino
+edit_uri: ""
+plugins:
+  - search
+nav:
+  - PyDomino: index.md
+  - Tutorial:
+      - tutorial/intro.md
+      - tutorial/block.md
+      - tutorial/action_function.md
+      - tutorial/domino.md
+  - Example:
+      - example/intro.md
+markdown_extensions:
+  - toc:
+      permalink: true
+  - admonition
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list
+  - md_in_html
