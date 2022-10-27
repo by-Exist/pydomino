@@ -3,13 +3,13 @@
 ## Action Function은
 
 * 도미노에 배치된 어떠한 블럭이 쓰러지는 동작에 비유됩니다.
-* Block을 첫 번째 인자, 나머지 종속성을 기타 인자로 제공받는 사용자 정의 함수입니다.
+* Block을 첫 번째 인자, 나머지 종속성을 기타 인자로 요구하는 사용자 정의 함수입니다.
 
 ## 정의
 
-Action Function의 첫 번째에 전달될 Block이 필요합니다.
+Action Function의 첫번째 인자로 전달될 Block 클래스를 정의합니다.
 
-```python
+```python hl_lines="4"
 from pydomino import Block
 
 
@@ -17,11 +17,9 @@ class WriteLog(Block):
     text: str
 ```
 
-해당 Block을 첫 번째 인자로, 기타 위치 또는 키워드 인자로 종속성을 필요로 하는 Action Function을 정의합니다.
+Block을 첫 번째 인자로, 기타 위치 또는 키워드 인자로 종속성을 필요로 하는 Action Function을 정의합니다. Action Function은 동기 함수 또는 코루틴을 반환하는 비동기 함수로 작성할 수 있습니다.
 
-Action Function은 요구사항에 따라 동기 함수 또는 코루틴을 반환하는 비동기 함수로 작성할 수 있습니다.
-
-```python
+```python hl_lines="15 20"
 from typing import Protocol
 from pydomino import Block
 

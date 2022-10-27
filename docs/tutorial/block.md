@@ -13,7 +13,7 @@
 
 자신만의 Block을 정의하기 위해서는 Block을 상속해야 합니다.
 
-```python
+```python hl_lines="2 5"
 from uuid import UUID, uuid4
 from pydomino import Block, field
 
@@ -21,8 +21,10 @@ from pydomino import Block, field
 class CustomBlock(Block):
     kwarg1: str
     kwarg2: bool | None = None
-    kwarg3: UUID = field(default_factory = uuid4)
+    kwarg3: UUID = field(default_factory = uuid4) # (1)
 ```
+
+1. Block은 Dataclass를 기반으로 작성되어 있으며, Dataclass처럼 사용할 수 있습니다.
 
 
 ## 인스턴스 생성

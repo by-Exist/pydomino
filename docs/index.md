@@ -4,13 +4,13 @@ PyDomino는 이벤트 스토밍의 구조에서 영감을 얻었습니다. 서�
 
 **문서**: [https://by-exist.github.io/pydomino](https://by-exist.github.io/pydomino)
 
-**소스코드**: [https://by-exist.github.io/pydomino](https://by-exist.github.io/pydomino)
+**소스코드**: [https://github.com/by-Exist/pydomino](https://github.com/by-Exist/pydomino)
 
 ## 설치
 
 pip를 통해 설치할 수 있습니다.
 
-```console
+```command
 $ pip install pydomino
 ```
 
