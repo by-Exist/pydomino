@@ -32,9 +32,7 @@ plugins:
 nav:
   - PyDomino: index.md
   - Tutorial:
-      - tutorial/intro.md
       - tutorial/block.md
-      - tutorial/action_function.md
       - tutorial/domino.md
   - Example:
       - example/intro.md
