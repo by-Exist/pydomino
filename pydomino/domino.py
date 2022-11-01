@@ -30,7 +30,9 @@ R_co = TypeVar("R_co", covariant=True)
 
 
 class IBlock(Protocol[R_co, P]):
-    def fall_down(self, *args: P.args, **kwargs: P.kwargs) -> R_co:
+    def fall_down(
+        self, *args: P.args, **kwargs: P.kwargs
+    ) -> R_co | Coroutine[Any, Any, R_co]:
         ...
 
 
@@ -79,6 +81,10 @@ def touch(*blocks: IAnyBlock):
 R = TypeVar("R")
 
 
+class NotPlacedBlock(RuntimeError):
+    ...
+
+
 class Domino:
     def __init__(self) -> None:
         self._deps: dict[type[IAnyBlock], tuple[tuple[Any], dict[str, Any]]] = {}
@@ -103,7 +109,7 @@ class Domino:
         block: IBlock[R, Any],
         return_effect: Literal[True] = True,
         _direct: bool = True | False,
-    ) -> tuple[R, asyncio.Future[Any]]:
+    ) -> tuple[R, asyncio.Future[list[Any]]]:
         ...
 
     async def start(
@@ -111,7 +117,7 @@ class Domino:
         block: IBlock[R, Any],
         return_effect: bool = False,
         _direct: bool = True,
-    ) -> R | tuple[R, asyncio.Future[Any]]:
+    ) -> R | tuple[R, asyncio.Future[list[Any]]]:
         await self.pre_fall_down(block)
         try:
             result, touched_blocks = await asyncio.create_task(self._fall_down(block))
@@ -136,7 +142,12 @@ class Domino:
         fall_down: Callable[..., R | Coroutine[Any, Any, R]] = getattr(
             block, "fall_down"
         )
-        args, kwargs = self._deps[type(block)]
+        try:
+            args, kwargs = self._deps[type(block)]
+        except KeyError:
+            raise NotPlacedBlock(
+                f"place되지 않은 Block은 사용할 수 없습니다. ({type(block).__name__})"
+            )
         with TouchContext() as catcher:
             if asyncio.iscoroutinefunction(fall_down):
                 fall_down = cast(Callable[..., Coroutine[Any, Any, R]], fall_down)
