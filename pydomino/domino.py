@@ -1,20 +1,56 @@
+from __future__ import annotations
+
 import asyncio
 from contextvars import ContextVar, Token
 from types import TracebackType
-from typing import Any, ContextManager, Iterable, Literal, ParamSpec, TypeVar, overload
+from typing import (
+    Any,
+    Callable,
+    ContextManager,
+    Coroutine,
+    Iterable,
+    Literal,
+    ParamSpec,
+    Protocol,
+    TypeVar,
+    cast,
+    overload,
+)
 
 from typing_extensions import Self
 
-from .action import Action, ActionFunction
-from .block import Block
+from .concurrency import run_in_threadpool
 
-_touched_blocks_context_var: ContextVar[set[Block]] = ContextVar("touched_blocks")
+
+#
+# Block Protocol
+#
+P = ParamSpec("P")
+R_co = TypeVar("R_co", covariant=True)
+
+
+class IBlock(Protocol[R_co, P]):
+    def fall_down(self, *args: P.args, **kwargs: P.kwargs) -> R_co:
+        ...
+
+
+IAnyBlock = IBlock[Any, Any]
+
+
+#
+# Touch Context
+#
+_touched_blocks_context_var: ContextVar[set[IAnyBlock]] = ContextVar("touched_blocks")
+
+
+class TouchContextError(LookupError):
+    ...
 
 
 class TouchContext(ContextManager["TouchContext"]):
 
-    _token: Token[set[Block]]
-    touched_blocks: set[Block]
+    _token: Token[set[IAnyBlock]]
+    touched_blocks: set[IAnyBlock]
 
     def __enter__(self) -> Self:
         self._token = _touched_blocks_context_var.set(set())
@@ -30,61 +66,61 @@ class TouchContext(ContextManager["TouchContext"]):
         _touched_blocks_context_var.reset(self._token)
 
 
-def touch(*blocks: Block):
-    _touched_blocks_context_var.get().update(blocks)
+def touch(*blocks: IAnyBlock):
+    try:
+        _touched_blocks_context_var.get().update(blocks)
+    except LookupError:
+        raise RuntimeError("touch 함수는 반드시 TouchContext 내에서 실행되어야 합니다.")
 
 
-B = TypeVar("B", bound=Block)
-P = ParamSpec("P")
+#
+# Domino
+#
+R = TypeVar("R")
 
 
 class Domino:
-    def __init__(self):
-        self._actions: dict[
-            type[Block],
-            Action[Block, ..., Any],
-        ] = {}
+    def __init__(self) -> None:
+        self._deps: dict[type[IAnyBlock], tuple[tuple[Any], dict[str, Any]]] = {}
 
     def place(
-        self,
-        block_type: type[B],
-        action_func: ActionFunction[B, P, Any],
-        *args: P.args,
-        **kwargs: P.kwargs,
+        self, block_type: type[IBlock[Any, P]], *args: P.args, **kwargs: P.kwargs
     ):
-        self._actions[block_type] = Action(action_func, *args, **kwargs)
+        self._deps[block_type] = (args, kwargs)
 
     @overload
     async def start(
         self,
-        block: Block,
+        block: IBlock[R, Any],
         return_effect: Literal[False] = False,
         _direct: bool = True | False,
-    ) -> Any:
+    ) -> R:
         ...
 
     @overload
     async def start(
         self,
-        block: Block,
+        block: IBlock[R, Any],
         return_effect: Literal[True] = True,
         _direct: bool = True | False,
-    ) -> tuple[Any, asyncio.Future[list[Any]]]:
+    ) -> tuple[R, asyncio.Future[Any]]:
         ...
 
     async def start(
         self,
-        block: Block,
+        block: IBlock[R, Any],
         return_effect: bool = False,
         _direct: bool = True,
-    ):
-        block_type = type(block)
-        action = self._actions.get(block_type, None)
-        if action is None:
-            raise RuntimeError(f"{block_type.__name__} is not placed.")
-        result, touched_blocks = await asyncio.create_task(
-            self._fall_down(block, action, raise_exception=_direct)
-        )
+    ) -> R | tuple[R, asyncio.Future[Any]]:
+        await self.pre_fall_down(block)
+        try:
+            result, touched_blocks = await asyncio.create_task(self._fall_down(block))
+        except Exception as e:
+            await self.exception_fall_down(block, e)
+            if _direct:
+                raise e
+            return  # type: ignore
+        await self.post_fall_down(block, result, touched_blocks)
         effect = asyncio.gather(
             *(self.start(block, _direct=False) for block in touched_blocks)
         )
@@ -95,43 +131,38 @@ class Domino:
 
     async def _fall_down(
         self,
-        block: Block,
-        action: Action[Block, ..., Any],
-        raise_exception: bool = False,
-    ):
-        result: Any = None
-        touched_blocks: list[Block] = []
-        try:
-            await self.pre_fall_down(block, action)
-            with TouchContext() as catcher:
-                result = await action(block)
-            touched_blocks.extend(catcher.touched_blocks)
-            await self.post_fall_down(block, action, result)
-        except Exception as e:
-            await self.exception_fall_down(block, action, e)
-            if raise_exception:
-                raise e
-        return result, touched_blocks
+        block: IBlock[R, P],
+    ) -> tuple[R, Iterable[IAnyBlock]]:
+        fall_down: Callable[..., R | Coroutine[Any, Any, R]] = getattr(
+            block, "fall_down"
+        )
+        args, kwargs = self._deps[type(block)]
+        with TouchContext() as catcher:
+            if asyncio.iscoroutinefunction(fall_down):
+                fall_down = cast(Callable[..., Coroutine[Any, Any, R]], fall_down)
+                result = await fall_down(*args, **kwargs)
+            else:
+                fall_down = cast(Callable[..., R], fall_down)
+                result = await run_in_threadpool(fall_down, *args, **kwargs)
+        return result, catcher.touched_blocks
 
     async def pre_fall_down(
         self,
-        block: Block,
-        action: Action[Any, ..., Any],
+        block: IAnyBlock,
     ):
         ...
 
     async def post_fall_down(
         self,
-        block: Block,
-        action: Action[Any, ..., Any],
-        result: Block | Iterable[Block] | None,
+        block: IAnyBlock,
+        result: Any,
+        touched_blocks: Iterable[IAnyBlock],
     ):
         ...
 
     async def exception_fall_down(
         self,
-        block: Block,
-        action: Action[Any, ..., Any],
+        block: IAnyBlock,
         exc: Exception,
     ):
         ...
