@@ -1,7 +1,7 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from dataclasses import field as field
 from types import FunctionType
 from typing import Any
-from uuid import UUID, uuid4
 
 from typing_extensions import Self, dataclass_transform
 
@@ -20,9 +20,6 @@ class BlockMeta(type):
 
 
 class Block(metaclass=BlockMeta):
-
-    _id: UUID = field(default_factory=uuid4)
-
     def __init_subclass__(cls) -> None:
         if not hasattr(cls, "fall_down") or not isinstance(
             getattr(cls, "fall_down"), FunctionType
