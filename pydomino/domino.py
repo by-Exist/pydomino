@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import asyncio
 from contextvars import ContextVar, Token
 from types import TracebackType
@@ -19,8 +17,8 @@ from typing import (
 
 from typing_extensions import Self
 
+from .block import Block
 from .concurrency import run_in_threadpool
-
 
 #
 # Block Protocol
@@ -118,15 +116,15 @@ class Domino:
         return_effect: bool = False,
         _direct: bool = True,
     ) -> R | tuple[R, asyncio.Future[list[Any]]]:
-        await self.pre_fall_down(block)
+        await self.pre_fall_down(block)  # type: ignore
         try:
             result, touched_blocks = await asyncio.create_task(self._fall_down(block))
         except Exception as e:
-            await self.exception_fall_down(block, e)
+            await self.exception_fall_down(block, e)  # type: ignore
             if _direct:
                 raise e
             return  # type: ignore
-        await self.post_fall_down(block, result, touched_blocks)
+        await self.post_fall_down(block, result, touched_blocks)  # type: ignore
         effect = asyncio.gather(
             *(self.start(block, _direct=False) for block in touched_blocks)
         )
@@ -159,21 +157,21 @@ class Domino:
 
     async def pre_fall_down(
         self,
-        block: IAnyBlock,
+        block: Block,
     ):
         ...
 
     async def post_fall_down(
         self,
-        block: IAnyBlock,
+        block: Block,
         result: Any,
-        touched_blocks: Iterable[IAnyBlock],
+        touched_blocks: Iterable[Block],
     ):
         ...
 
     async def exception_fall_down(
         self,
-        block: IAnyBlock,
+        block: Block,
         exc: Exception,
     ):
         ...
