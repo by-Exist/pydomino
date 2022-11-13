@@ -6,7 +6,7 @@ PyDomino는 이벤트 스토밍, 헥사고날 아키텍처, 커맨드 디자인 
 
 **문서**: [https://by-exist.github.io/pydomino](https://by-exist.github.io/pydomino)
 
-**소스코드**: [https://by-exist.github.io/pydomino](https://by-exist.github.io/pydomino)
+**소스코드**: [https://github.com/by-Exist/pydomino](https://github.com/by-Exist/pydomino)
 
 ## 설치
 
