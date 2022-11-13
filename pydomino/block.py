@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from dataclasses import field as field
-from types import FunctionType
 from typing import Any
 
 from typing_extensions import Self, dataclass_transform
@@ -16,12 +15,8 @@ class BlockMeta(type):
         **kwds: Any,
     ) -> Self:
         cls = super().__new__(cls, name, bases, namespace)
-        return dataclass(frozen=True, kw_only=True)(cls)  # type: ignore
+        return dataclass(kw_only=True)(cls)  # type: ignore
 
 
 class Block(metaclass=BlockMeta):
-    def __init_subclass__(cls) -> None:
-        if not hasattr(cls, "fall_down") or not isinstance(
-            getattr(cls, "fall_down"), FunctionType
-        ):
-            raise NotImplementedError(f"{cls.__name__}에 fall_down 메서드가 정의되어 있지 않습니다.")
+    ...
