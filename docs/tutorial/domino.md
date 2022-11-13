@@ -20,15 +20,15 @@ class IPrinter(Protocol):
 class FirstBlock(Block):
     data: str
 
-    def fall_down(self, printer: IPrinter):  # 1
+    def fall_down(self, printer: IPrinter):
         printer.print(self.data)
-        touch(SecondBlock(data=self.data))  # 2
+        touch(SecondBlock(data=self.data))
 
 
 class SecondBlock(Block):
     data: str
 
-    async def fall_down(self):  # 3
+    async def fall_down(self):
         print(f"Second Block : {self.data}")
 
 
@@ -171,8 +171,6 @@ start 메서드가 반환하는 값의 타입 힌트가 제공됩니다.
 Domino 구조에서 Exception에 대해 **반드시** 짚고 가야 할 부분이 존재합니다. start 메서드에 직접적으로 전달된 블럭의 fall_down 동작 중에 발생한 예외는 호출부 까지 전파됩니다. 그러나, **Effect 과정에서 발생하는 예외는 무시됩니다**.
 
 의도적으로 이와 같이 설계되었습니다. 직접적으로 전달된 Block의 동작은 **필수적, Do**인 것으로 여겨 호출부까지 예외를 전파하고, 해당 동작으로 인해 후속되는 동작은 **간접적, Effect**인 것으로 여겨 호출부에 예외를 전파하지 않습니다.
-
-실패한 블럭에 대한 로깅이나 재시도 관련 로직은 Domino의 Hook 메서드를 재정의함으로써 구현할 수 있습니다.
 
 ## Hook 메서드
 
