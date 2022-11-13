@@ -17,7 +17,6 @@ from typing import (
 
 from typing_extensions import Self
 
-from .block import Block
 from .concurrency import run_in_threadpool
 
 #
@@ -116,15 +115,15 @@ class Domino:
         return_effect: bool = False,
         _direct: bool = True,
     ) -> R | tuple[R, asyncio.Future[list[Any]]]:
-        await self.pre_fall_down(block)  # type: ignore
+        await self.pre_fall_down(block)
         try:
             result, touched_blocks = await asyncio.create_task(self._fall_down(block))
         except Exception as e:
-            await self.exception_fall_down(block, e)  # type: ignore
+            await self.exception_fall_down(block, e)
             if _direct:
                 raise e
             return  # type: ignore
-        await self.post_fall_down(block, result, touched_blocks)  # type: ignore
+        await self.post_fall_down(block, result, touched_blocks)
         effect = asyncio.gather(
             *(self.start(block, _direct=False) for block in touched_blocks)
         )
@@ -157,21 +156,21 @@ class Domino:
 
     async def pre_fall_down(
         self,
-        block: Block,
+        block: IBlock[Any, Any],
     ):
         ...
 
     async def post_fall_down(
         self,
-        block: Block,
+        block: IBlock[Any, Any],
         result: Any,
-        touched_blocks: Iterable[Block],
+        touched_blocks: Iterable[IBlock[Any, Any]],
     ):
         ...
 
     async def exception_fall_down(
         self,
-        block: Block,
+        block: IBlock[Any, Any],
         exc: Exception,
     ):
         ...
