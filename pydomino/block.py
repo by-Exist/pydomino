@@ -1,22 +1,15 @@
-from dataclasses import dataclass
-from dataclasses import field as field
-from typing import Any
+from typing import Any, Coroutine, ParamSpec, Protocol, TypeVar
 
-from typing_extensions import Self, dataclass_transform
-
-
-@dataclass_transform(kw_only_default=True)
-class BlockMeta(type):
-    def __new__(
-        cls: type[Self],
-        name: str,
-        bases: tuple[type, ...],
-        namespace: dict[str, Any],
-        **kwds: Any,
-    ) -> Self:
-        cls = super().__new__(cls, name, bases, namespace)
-        return dataclass(kw_only=True)(cls)  # type: ignore
+P = ParamSpec("P")
+R_co = TypeVar("R_co", covariant=True)
 
 
-class Block(metaclass=BlockMeta):
-    ...
+class Block(Protocol):
+    fall_down: Any
+
+
+class Falldownable(Protocol[P, R_co]):
+    def fall_down(
+        self, *args: P.args, **kwargs: P.kwargs
+    ) -> R_co | Coroutine[Any, Any, R_co]:
+        ...
