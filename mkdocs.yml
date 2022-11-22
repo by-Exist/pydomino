@@ -36,6 +36,7 @@ nav:
       - tutorial/domino.md
   - Example:
       - example/intro.md
+      - example/event_storming.md
 markdown_extensions:
   - attr_list
   - md_in_html
