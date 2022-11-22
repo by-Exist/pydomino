@@ -7,9 +7,10 @@ Domino는 블럭이 줄지어 늘어선 도미노 구조에 비유됩니다.
 pydomino.Domino의 인스턴스를 생성합니다.
 
 ```python
+from dataclasses import dataclass
 from typing import Protocol
 
-from pydomino import Block, Domino, touch  # type: ignore
+from pydomino import Block, Domino, touch
 
 
 class IPrinter(Protocol):
@@ -17,6 +18,7 @@ class IPrinter(Protocol):
         ...
 
 
+@dataclass(kw_only=True, frozen=True, slots=True)
 class FirstBlock(Block):
     data: str
 
@@ -25,6 +27,7 @@ class FirstBlock(Block):
         touch(SecondBlock(data=self.data))
 
 
+@dataclass(kw_only=True, frozen=True, slots=True)
 class SecondBlock(Block):
     data: str
 
@@ -49,11 +52,12 @@ FirstBlock의 fall_down 메서드는 printer라는 인자를 필요로 합니다
 
 type hint 기능을 통해 어떤 인자가 누락되었는지 확인할 수 있습니다.
 
-![place type hint](../_assets/domino_place_type_hint.png)
+![place need deps](../_assets/place_need_deps.png)
 
 전체 코드는 다음과 같습니다.
 
 ```python
+from dataclasses import dataclass
 from typing import Protocol
 
 from pydomino import Block, Domino, touch
@@ -64,6 +68,7 @@ class IPrinter(Protocol):
         ...
 
 
+@dataclass(kw_only=True, frozen=True, slots=True)
 class FirstBlock(Block):
     data: str
 
@@ -72,6 +77,7 @@ class FirstBlock(Block):
         touch(SecondBlock(data=self.data))
 
 
+@dataclass(kw_only=True, frozen=True, slots=True)
 class SecondBlock(Block):
     data: str
 
@@ -80,6 +86,7 @@ class SecondBlock(Block):
 
 
 domino = Domino()
+
 
 class SomePrinter(IPrinter):
     def print(self, s: str):
@@ -116,10 +123,12 @@ Pydomino에서 effect는 Future 객체로 구현됩니다. 다음과 같이 활�
 
 ```python title="test.py"
 import asyncio
+from dataclasses import dataclass
 
 from pydomino import Block, Domino, touch
 
 
+@dataclass(kw_only=True, frozen=True, slots=True)
 class ReturnOneBlock(Block):
     async def fall_down(self) -> int:
         touch(ReturnTwoBlock())
@@ -127,6 +136,7 @@ class ReturnOneBlock(Block):
         return 1
 
 
+@dataclass(kw_only=True, frozen=True, slots=True)
 class ReturnTwoBlock(Block):
     async def fall_down(self) -> int:
         print("Fall down ReturnTwoBlock.")
@@ -164,7 +174,7 @@ main: after effect
 
 start 메서드가 반환하는 값의 타입 힌트가 제공됩니다.
 
-![start type hint](../_assets/domino_start_type_hint.png)
+![start type hint](../_assets/start_return_type_hint.png)
 
 ### Exception 전파
 
@@ -178,14 +188,16 @@ Domino에는 세 가지 비동기 훅 메서드가 존재합니다. (pre_fall_do
 
 아래 예제를 동작시킨 결과를 통해 동작을 확인하실 수 있습니다.
 
-```python title="test.py"
+```python
 import asyncio
+from dataclasses import dataclass, field
 from typing import Any, Iterable
 from uuid import UUID, uuid4
 
-from pydomino import Block, Domino, touch, field
+from pydomino import Block, Domino, touch
 
 
+@dataclass(kw_only=True, frozen=True, slots=True)
 class First(Block):
 
     id: UUID = field(default_factory=uuid4)
@@ -195,6 +207,7 @@ class First(Block):
         return 1
 
 
+@dataclass(kw_only=True, frozen=True, slots=True)
 class Second(Block):
 
     id: UUID = field(default_factory=uuid4)
