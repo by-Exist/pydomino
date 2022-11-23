@@ -10,7 +10,7 @@ PyDomino는 이벤트 스토밍, 헥사고날 아키텍처, 커맨드 디자인 
 
 ## 설치
 
-pip를 통해 설치할 수 있습니다.
+pip를 통해 설치할 수 있습니다. (작업중...)
 
 ```console
 pip install pydomino
