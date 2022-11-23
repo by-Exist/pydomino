@@ -38,6 +38,7 @@ nav:
       - example/intro.md
       - example/event_storming.md
       - example/repository_pattern.md
+      - example/pub_sub.md
 markdown_extensions:
   - attr_list
   - md_in_html
