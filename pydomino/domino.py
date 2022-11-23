@@ -72,7 +72,10 @@ class Domino:
         )
         if return_effect:
             return result, effect
-        await effect
+        try:
+            await effect
+        except Exception as e:
+            return # type: ignore
         return result
 
     async def _fall_down(
